@@ -3,20 +3,21 @@ const randomToken = require("random-token");
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 const router = express.Router();
-const firebase = require("firebase");
+//const firebase = require("firebase");
+const firebase = require("../config/firebase");
 
-var firebaseConfig = {
-    apiKey: "AIzaSyDTsWh-ATsI14WVBvg_dHisp59_BsUcNy0",
-    authDomain: "iattend-e19c5.firebaseapp.com",
-    databaseURL: "https://iattend-e19c5-default-rtdb.firebaseio.com",
-    projectId: "iattend-e19c5",
-    storageBucket: "iattend-e19c5.appspot.com",
-    messagingSenderId: "695692245695",
-    appId: "1:695692245695:web:246ea36c29f784c8cf240a",
-    measurementId: "G-9S6T9D2GXX",
-};
+// var firebaseConfig = {
+//     apiKey: "AIzaSyDTsWh-ATsI14WVBvg_dHisp59_BsUcNy0",
+//     authDomain: "iattend-e19c5.firebaseapp.com",
+//     databaseURL: "https://iattend-e19c5-default-rtdb.firebaseio.com",
+//     projectId: "iattend-e19c5",
+//     storageBucket: "iattend-e19c5.appspot.com",
+//     messagingSenderId: "695692245695",
+//     appId: "1:695692245695:web:246ea36c29f784c8cf240a",
+//     measurementId: "G-9S6T9D2GXX",
+// };
 // Initialize Firebase
-firebase.initializeApp(firebaseConfig);
+//firebase.initializeApp(firebaseConfig);
 //firebase.analytics();
 // // Fetch the service account key JSON file contents
 // var serviceAccount = require("../iattendservice.json");
