@@ -46,7 +46,8 @@ router.post("/login", async(req, res, next) => {
     functions.logger.log("Password", password);
 
     //Sign in with firebase
-    firebase
+
+    admin
         .auth()
         .signInWithEmailAndPassword(email, password)
         .then((userCredential) => {
@@ -97,29 +98,21 @@ router.post("/signup", async(req, res, next) => {
     functions.logger.log("Password", password);
 
     //Sign in with firebase
-    firebase
+    //admin.auth().createUser()
+    admin
         .auth()
-        .createUserWithEmailAndPassword(email, password)
+        .createUser({
+            email: "user@example.com",
+            emailVerified: false,
+            phoneNumber: "+11234567890",
+            password: "secretPassword",
+            displayName: "John Doe",
+            photoURL: "http://www.example.com/12345678/photo.png",
+            disabled: false,
+        })
         .then((userCredential) => {
             // Signed in
-            var user = userCredential.user;
-
-            //Update the display name and the photo
-
-            user
-                .updateProfile({
-                    displayName: firstName + " " + lastName,
-                    photoURL: "",
-                })
-                .then((res) => {
-                    // Update successful.
-                    return res;
-                })
-                .catch((error) => {
-                    // An error happened.
-                    console.log("An error occurred");
-                    console.log(error);
-                });
+            var user = userCredential;
 
             //Store the user details in the user table
 
