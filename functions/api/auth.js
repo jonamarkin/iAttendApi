@@ -47,7 +47,7 @@ router.post("/login", async(req, res, next) => {
 
     //Sign in with firebase
 
-    admin
+    firebase
         .auth()
         .signInWithEmailAndPassword(email, password)
         .then((userCredential) => {
@@ -156,17 +156,6 @@ router.post("/signup", async(req, res, next) => {
 
 router.post("/logout", (req, res, next) => {
     var message;
-    firebase
-        .auth()
-        .signOut()
-        .then(() => {
-            // Sign-out successful.
-            message = "Successful";
-            return message;
-        })
-        .catch((error) => {
-            // An error happened.
-        });
 
     res.status(200).json({
         message: message,
