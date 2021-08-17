@@ -13,7 +13,7 @@ firebase-debug.*.log*
 
 
 # Service account
-functions/iattendservice.json
+.functions/iattendservice.json
 
 # Firebase config
 
