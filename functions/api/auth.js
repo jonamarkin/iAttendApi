@@ -6,28 +6,10 @@ const router = express.Router();
 //const firebase = require("firebase");
 const firebase = require("../config/firebase");
 
-// var firebaseConfig = {
-//     apiKey: "AIzaSyDTsWh-ATsI14WVBvg_dHisp59_BsUcNy0",
-//     authDomain: "iattend-e19c5.firebaseapp.com",
-//     databaseURL: "https://iattend-e19c5-default-rtdb.firebaseio.com",
-//     projectId: "iattend-e19c5",
-//     storageBucket: "iattend-e19c5.appspot.com",
-//     messagingSenderId: "695692245695",
-//     appId: "1:695692245695:web:246ea36c29f784c8cf240a",
-//     measurementId: "G-9S6T9D2GXX",
-// };
-// Initialize Firebase
-//firebase.initializeApp(firebaseConfig);
-//firebase.analytics();
-// // Fetch the service account key JSON file contents
-// var serviceAccount = require("../iattendservice.json");
-
-// // Initialize the app with a service account, granting admin privileges
-// admin.initializeApp({
-//     credential: admin.credential.cert(serviceAccount),
-//     databaseURL: "https://iattend-e19c5-default-rtdb.firebaseio.com/",
-// });
-
+const { v1: uuidv1, v4: uuidv4 } = require("uuid");
+const {
+    UserDimensions,
+} = require("firebase-functions/lib/providers/analytics");
 // As an admin, the app has access to read and write all data, regardless of Security Rules
 var db = admin.database();
 
@@ -54,30 +36,30 @@ router.post("/login", async(req, res, next) => {
             // Signed in
             var user = userCredential.user;
 
-            this.responseCode = "00";
-            this.message = "Login successful";
-            this.dataObject = user;
-            //statusCode = 200;
-
             functions.logger.log("User", user);
             functions.logger.log("Email", responseCode + message + dataObject);
-            return user;
+
+            return res.status(200).json({
+                responseCode: "000",
+                responseMessage: "Success",
+                responseData: user,
+            });
         })
         .catch((error) => {
-            this.responseCode = "99";
+            this.responseCode = "999";
             this.message = error.message;
             this.dataObject = error;
             //statusCode = 500;
 
             functions.logger.log("No user", error);
             functions.logger.log("No user", error.message);
-        });
 
-    res.status(200).json({
-        responseCode: responseCode,
-        responseMessage: message,
-        responseData: dataObject,
-    });
+            return res.status(500).json({
+                responseCode: "777",
+                responseMessage: error.message,
+                responseData: error,
+            });
+        });
 });
 
 router.post("/signup", async(req, res, next) => {
@@ -87,11 +69,7 @@ router.post("/signup", async(req, res, next) => {
     var firstName = data.firstName;
     var lastName = data.lastName;
     var groupId = data.groupId;
-
-    var responseCode = " ";
-    var message = " ";
-    var dataObject = null;
-    //var statusCode = 200;
+    var role = data.role;
 
     console.log("Email" + email + "Password" + password);
     functions.logger.log("Email", email);
@@ -102,54 +80,64 @@ router.post("/signup", async(req, res, next) => {
     admin
         .auth()
         .createUser({
-            email: "user@example.com",
+            email: email,
             emailVerified: false,
-            phoneNumber: "+11234567890",
-            password: "secretPassword",
-            displayName: "John Doe",
+            password: password,
+            displayName: firstName + lastName,
             photoURL: "http://www.example.com/12345678/photo.png",
             disabled: false,
         })
-        .then((userCredential) => {
+        .then(async(userCredential) => {
             // Signed in
             var user = userCredential;
 
             //Store the user details in the user table
 
+            //Generate User ID
+            var userId = uuidv1();
+            var memberId = groupId + "-" + userId;
+
             var usersRef = db.ref("users");
             usersRef.set({
-                email: {
+                userId: {
                     firstName: firstName,
                     lastName: lastName,
+                    middleName: "",
+                    title: "",
                     groupId: groupId,
                     email: email,
-                    role: "Member",
+                    memberId: memberId,
+                    phoneNumbers: [],
+                    address: "",
+                    teams: [],
+                    role: role,
                 },
             });
 
-            responseCode = "00";
-            message = "Login successful";
-            dataObject = user;
-            //statusCode = 200;
+            //Set Custom Claims
+            const customClaims = {
+                admin: role === "admin" ? true : false,
+                accessLevel: 1,
+            };
 
-            res.status(200).json({
-                responseCode: responseCode,
-                responseMessage: message,
-                responseData: dataObject,
+            try {
+                // Set custom user claims on this newly created user.
+                await admin.auth().setCustomUserClaims(user.uid, customClaims);
+            } catch (error) {
+                console.log(error);
+            }
+
+            return res.status(200).json({
+                responseCode: "000",
+                responseMessage: "Account created successfully",
+                responseData: user,
             });
-
-            return user;
         })
         .catch((error) => {
-            responseCode = "99";
-            message = error.message;
-            dataObject = error;
-            //statusCode = 500;
-
-            res.status(500).json({
-                responseCode: responseCode,
-                responseMessage: message,
-                responseData: dataObject,
+            return res.status(500).json({
+                responseCode: "777",
+                responseMessage: "Account creation failed",
+                responseData: error,
             });
         });
 });
