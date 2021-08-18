@@ -11,7 +11,8 @@ const {
     UserDimensions,
 } = require("firebase-functions/lib/providers/analytics");
 // As an admin, the app has access to read and write all data, regardless of Security Rules
-var db = admin.database();
+var db = admin.firestore();
+//var firestore = admin.firestore();
 
 router.post("/login", async(req, res, next) => {
     var data = req.body;
@@ -83,7 +84,7 @@ router.post("/signup", async(req, res, next) => {
             email: email,
             emailVerified: false,
             password: password,
-            displayName: firstName + lastName,
+            displayName: firstName + " " + lastName,
             photoURL: "http://www.example.com/12345678/photo.png",
             disabled: false,
         })
@@ -91,27 +92,27 @@ router.post("/signup", async(req, res, next) => {
             // Signed in
             var user = userCredential;
 
+            functions.logger.log("User", userCredential);
+
             //Store the user details in the user table
 
             //Generate User ID
-            var userId = uuidv1();
+            var userId = user.uid;
             var memberId = groupId + "-" + userId;
 
-            var usersRef = db.ref("users");
-            usersRef.set({
-                userId: {
-                    firstName: firstName,
-                    lastName: lastName,
-                    middleName: "",
-                    title: "",
-                    groupId: groupId,
-                    email: email,
-                    memberId: memberId,
-                    phoneNumbers: [],
-                    address: "",
-                    teams: [],
-                    role: role,
-                },
+            var usersRef = db.collection("users");
+            usersRef.doc(userId).set({
+                firstName: firstName,
+                lastName: lastName,
+                middleName: "",
+                title: "",
+                groupId: groupId,
+                email: email,
+                memberId: memberId,
+                phoneNumbers: [],
+                address: "",
+                teams: [],
+                role: role,
             });
 
             //Set Custom Claims
@@ -136,7 +137,78 @@ router.post("/signup", async(req, res, next) => {
         .catch((error) => {
             return res.status(500).json({
                 responseCode: "777",
-                responseMessage: "Account creation failed",
+                responseMessage: "Failed! " + error.message,
+                responseData: error,
+            });
+        });
+});
+
+router.post("/updateUser", async(req, res, next) => {
+    var data = req.body;
+    var email = data.email;
+    var password = data.password;
+    var firstName = data.firstName;
+    var lastName = data.lastName;
+    var groupId = data.groupId;
+    var role = data.role;
+    var uid = data.uid;
+    var title = data.title;
+    var memberId = data.memberId;
+
+    var middleName = data.middleName;
+    var phoneNumbers = data.phoneNumbers;
+    var address = data.address;
+
+    console.log("Email" + email + "Password" + password);
+    functions.logger.log("Email", email);
+    functions.logger.log("Phone", phoneNumbers[0]);
+
+    var primaryPhone = phoneNumbers[0];
+    functions.logger.log("Primary", primaryPhone);
+
+    admin
+        .auth()
+        .updateUser(uid, {
+            email: email,
+            emailVerified: true,
+            password: password,
+            displayName: firstName + " " + lastName,
+            // photoURL: "",
+            disabled: false,
+        })
+        .then((userRecord) => {
+            // See the UserRecord reference doc for the contents of userRecord.
+            console.log("Successfully updated user", userRecord.toJSON());
+            functions.logger.log("Successfully updated user", userRecord.toJSON());
+
+            var usersRef = db.collection("users");
+            usersRef.doc(uid).set({
+                firstName: firstName,
+                lastName: lastName,
+                middleName: middleName,
+                title: title,
+                groupId: groupId,
+                email: email,
+                memberId: memberId,
+                phoneNumbers: phoneNumbers,
+                address: address,
+                teams: [],
+                role: role,
+            });
+
+            return res.status(200).json({
+                responseCode: "000",
+                responseMessage: "Successfully updated user",
+                //responseData: error,
+            });
+        })
+        .catch((error) => {
+            console.log("Error updating user:", error);
+            functions.logger.log(error);
+
+            return res.status(500).json({
+                responseCode: "777",
+                responseMessage: "Error updating user",
                 responseData: error,
             });
         });

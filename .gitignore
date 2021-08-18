@@ -11,10 +11,6 @@ firebase-debug.*.log*
 .firebase/
 
 
-
-# Service account
-.functions/iattendservice.json
-
 # Firebase config
 
 # Uncomment this if you'd like others to create their own Firebase project.
@@ -71,3 +67,4 @@ node_modules/
 .env
 
 
+functions/iattendservice.json
