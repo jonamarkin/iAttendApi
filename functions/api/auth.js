@@ -5,6 +5,7 @@ const admin = require("firebase-admin");
 const router = express.Router();
 //const firebase = require("firebase");
 const firebase = require("../config/firebase");
+const nodemailer = require("nodemailer");
 
 const { v1: uuidv1, v4: uuidv4 } = require("uuid");
 const {
@@ -214,12 +215,67 @@ router.post("/updateUser", async(req, res, next) => {
         });
 });
 
-router.post("/logout", (req, res, next) => {
-    var message;
+router.post("/resetPassword", (req, res, next) => {
+    var data = req.body;
 
-    res.status(200).json({
-        message: message,
-    });
+    // Admin SDK API to generate the password reset link.
+    const userEmail = data.email;
+
+    functions.logger.log(userEmail);
+
+    admin
+        .auth()
+        .generatePasswordResetLink(userEmail)
+        .then((link) => {
+            // Construct password reset email template, embed the link and send
+            // using custom SMTP server.
+
+            functions.logger.log("Link: " + link);
+            sendCustomPasswordResetEmail(userEmail, userEmail, link);
+
+            return res.status(200).json({
+                responseCode: "000",
+                responseMessage: "Password reset email sent to " + userEmail,
+            });
+        })
+        .catch((error) => {
+            // Some error occurred.
+            return res.status(500).json({
+                responseCode: "777",
+                responseMessage: "Password reset failed",
+                responseData: error,
+            });
+        });
 });
+
+function sendCustomPasswordResetEmail(userEmail, displayName, link) {
+    const transporter = nodemailer.createTransport({
+        host: "smtp.gmail.com",
+        port: 587,
+        auth: {
+            user: "jamapps10@gmail.com",
+            pass: "JAMapps10@@",
+        },
+    });
+    //transporter.verify().then(console.log).catch(console.error);
+
+    functions.logger.log("Link oooooooo ");
+    functions.logger.log(link);
+
+    transporter
+        .sendMail({
+            from: '"JamApps" <jamapps10@gmail>', // sender address
+            to: userEmail, // list of receivers
+            subject: "iAttend Password Reset", // Subject line
+            text: "Click this link to reset your password! " + link, // plain text body
+            html: `<b>Click this link to reset your password!</b> <hr/> <a href= "${link}"
+                >Password Reset</a>`,
+            // html body
+        })
+        .then((info) => {
+            return console.log({ info });
+        })
+        .catch(console.error);
+}
 
 module.exports = router;

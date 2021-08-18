@@ -5,75 +5,36 @@ const admin = require("firebase-admin");
 const router = express.Router();
 const { v1: uuidv1, v4: uuidv4 } = require("uuid");
 
+const db = admin.firestore();
 router.post("/create", async(req, res, next) => {
     var data = req.body;
     var name = data.email;
     var description = data.description;
     var groupId = data.groupId;
-    var lastName = data.lastName;
+    var createdBy = data.uid;
 
-    var role = data.role;
+    var teamId = uuidv1();
 
-    admin
-        .auth()
-        .createUser({
-            email: email,
-            emailVerified: false,
-            password: password,
-            displayName: firstName + lastName,
-            photoURL: "http://www.example.com/12345678/photo.png",
-            disabled: false,
+    db.collection("teams")
+        .doc(teamId)
+        .set({
+            name: name,
+            teamId: teamId,
+            description: description,
+            groupId: groupId,
+            createdBy: createdBy,
         })
-        .then(async(userCredential) => {
-            // Signed in
-            var user = userCredential;
-
-            //Store the user details in the user table
-
-            //Generate User ID
-            var userId = uuidv1();
-            var memberId = groupId + "-" + userId;
-
-            var usersRef = db.ref("users");
-            usersRef.set({
-                userId: {
-                    firstName: firstName,
-                    lastName: lastName,
-                    middleName: "",
-                    title: "",
-                    groupId: groupId,
-                    email: email,
-                    memberId: memberId,
-                    phoneNumbers: [],
-                    address: "",
-                    teams: [],
-                    role: role,
-                },
-            });
-
-            //Set Custom Claims
-            const customClaims = {
-                admin: role === "admin" ? true : false,
-                accessLevel: 1,
-            };
-
-            try {
-                // Set custom user claims on this newly created user.
-                await admin.auth().setCustomUserClaims(user.uid, customClaims);
-            } catch (error) {
-                console.log(error);
-            }
-
+        .then((response) => {
             return res.status(200).json({
                 responseCode: "000",
-                responseMessage: "Account created successfully",
-                responseData: user,
+                responseMessage: "Team created successfully!",
+                responseData: response,
             });
         })
         .catch((error) => {
             return res.status(500).json({
                 responseCode: "777",
-                responseMessage: "Account creation failed",
+                responseMessage: "Team creation failed!",
                 responseData: error,
             });
         });
