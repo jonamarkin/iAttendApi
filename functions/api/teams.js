@@ -104,3 +104,24 @@ router.get("/getMembers/:teamId", async(req, res, next) => {
             });
         });
 });
+
+router.delete("/delete/:teamId", async(req, res, next) => {
+    var teamId = req.params.teamId;
+    db.collection("users")
+        .doc(teamId)
+        .delete()
+        .then((querySnapshot) => {
+            console.log(querySnapshot);
+            return res.status(200).json({
+                responseCode: "000",
+                responseMessage: "Successfully deleted team!",
+            });
+        })
+        .catch((error) => {
+            return res.status(500).json({
+                responseCode: "777",
+                responseMessage: "Failed to delete team!",
+                responseData: error,
+            });
+        });
+});
